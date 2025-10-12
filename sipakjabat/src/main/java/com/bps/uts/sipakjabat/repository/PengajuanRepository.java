@@ -8,4 +8,5 @@ import java.util.List;
 public interface PengajuanRepository extends JpaRepository<Pengajuan, Long> {
     List<Pengajuan> findByUserId(Long userId);
     List<Pengajuan> findAllByStatus(StatusPengajuan status);
+    long countByStatus(StatusPengajuan status);
 }

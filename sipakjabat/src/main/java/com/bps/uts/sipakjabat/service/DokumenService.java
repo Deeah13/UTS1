@@ -1,12 +1,15 @@
 package com.bps.uts.sipakjabat.service;
 
 import com.bps.uts.sipakjabat.dto.CreateDokumenRequest;
+import com.bps.uts.sipakjabat.dto.MessageResponse;
+import com.bps.uts.sipakjabat.dto.PegawaiCreateDokumenRequest;
 import com.bps.uts.sipakjabat.model.MasterDokumenPegawai;
 import com.bps.uts.sipakjabat.model.User;
 import com.bps.uts.sipakjabat.repository.MasterDokumenPegawaiRepository;
 import com.bps.uts.sipakjabat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -15,12 +18,36 @@ public class DokumenService {
     private final MasterDokumenPegawaiRepository dokumenRepository;
     private final UserRepository userRepository;
 
+    @Transactional
+    public MasterDokumenPegawai createMyDokumen(PegawaiCreateDokumenRequest request, User currentUser) {
+        MasterDokumenPegawai newDokumen = MasterDokumenPegawai.builder()
+                .user(currentUser)
+                .jenisDokumen(request.getJenisDokumen())
+                .nomorDokumen(request.getNomorDokumen())
+                .tanggalTerbit(request.getTanggalTerbit())
+                .deskripsi(request.getDeskripsi())
+                .build();
+        return dokumenRepository.save(newDokumen);
+    }
+
+    @Transactional
+    public MessageResponse deleteMyDokumen(Long dokumenId, User currentUser) {
+        MasterDokumenPegawai dokumen = dokumenRepository.findById(dokumenId)
+                .orElseThrow(() -> new RuntimeException("Dokumen dengan ID " + dokumenId + " tidak ditemukan"));
+
+        if (!dokumen.getUser().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Akses ditolak: Anda tidak memiliki izin untuk menghapus dokumen ini.");
+        }
+
+        dokumenRepository.delete(dokumen);
+        return new MessageResponse("Dokumen berhasil dihapus.");
+    }
+
+    @Transactional
     public MasterDokumenPegawai createDokumenForUser(CreateDokumenRequest request) {
-        // 1. Cari pengguna berdasarkan userId dari request
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User dengan ID " + request.getUserId() + " tidak ditemukan"));
 
-        // 2. Buat objek dokumen baru
         MasterDokumenPegawai newDokumen = MasterDokumenPegawai.builder()
                 .user(user)
                 .jenisDokumen(request.getJenisDokumen())
@@ -29,7 +56,6 @@ public class DokumenService {
                 .deskripsi(request.getDeskripsi())
                 .build();
 
-        // 3. Simpan ke database dan kembalikan hasilnya
         return dokumenRepository.save(newDokumen);
     }
 }

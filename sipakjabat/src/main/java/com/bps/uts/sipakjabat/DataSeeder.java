@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 
 @Component
@@ -23,20 +22,23 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Hanya jalankan seeder jika tidak ada user sama sekali
+        // Hanya jalankan seeder jika database kosong
         if (userRepository.count() == 0) {
-            // User 1
+            // User 1 - Pegawai
             User andi = User.builder()
                     .namaLengkap("Andi Budiman")
                     .nip("199501012020121001")
                     .email("andi.budiman@bps.go.id")
                     .password(passwordEncoder.encode("password123"))
-                    .pangkatGolongan("Penata Muda / IIIa")
+                    .pangkatGolongan("Penata Muda (III/a)")
                     .jabatan("Statistisi Ahli Pertama")
+                    // --- PERBAIKAN FINAL ADA DI SINI ---
+                    .tmtPangkatTerakhir(LocalDate.of(2022, 4, 1)) // Gunakan method builder yang benar
                     .role(Role.PEGAWAI)
                     .build();
             userRepository.save(andi);
 
+            // Buat dokumen SK Pangkat untuk Andi
             dokumenRepository.save(MasterDokumenPegawai.builder()
                     .user(andi)
                     .jenisDokumen(JenisDokumen.SK_PANGKAT)
@@ -45,37 +47,26 @@ public class DataSeeder implements CommandLineRunner {
                     .deskripsi("SK Kenaikan Pangkat Golongan IIIa")
                     .build());
 
+            // Buat dokumen SKP untuk Andi
             dokumenRepository.save(MasterDokumenPegawai.builder()
                     .user(andi)
-                    .jenisDokumen(JenisDokumen.IJAZAH)
-                    .nomorDokumen("UNIV/STAT/001/2018")
-                    .tanggalTerbit(LocalDate.of(2018, 9, 20))
-                    .deskripsi("Ijazah S1 Statistik Universitas ABC")
+                    .jenisDokumen(JenisDokumen.SKP)
+                    .nomorDokumen("SKP/BPS/2024")
+                    .tanggalTerbit(LocalDate.of(2024, 12, 31))
+                    .deskripsi("SKP 2 Tahun Terakhir")
                     .build());
 
-            // User 2
-            User citra = User.builder()
-                    .namaLengkap("Citra Lestari")
-                    .nip("199603152021122002")
-                    .email("citra.lestari@bps.go.id")
-                    .password(passwordEncoder.encode("password123"))
-                    .pangkatGolongan("Pengatur / IIc")
-                    .jabatan("Statistisi Pelaksana")
-                    .role(Role.PEGAWAI)
-                    .build();
-            userRepository.save(citra);
-
-            // User 3 - Verifikator
-            User verifikator = User.builder()
+            // User 2 - Verifikator
+            User rina = User.builder()
                     .namaLengkap("Rina Wulandari")
                     .nip("199005102015032001")
                     .email("rina.wulandari@bps.go.id")
                     .password(passwordEncoder.encode("verifikator123"))
-                    .pangkatGolongan("Penata / IIIc")
+                    .pangkatGolongan("Penata (III/c)")
                     .jabatan("Analis Kepegawaian")
                     .role(Role.VERIFIKATOR)
                     .build();
-            userRepository.save(verifikator);
+            userRepository.save(rina);
         }
     }
 }

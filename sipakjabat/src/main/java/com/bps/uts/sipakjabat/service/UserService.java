@@ -1,15 +1,12 @@
 package com.bps.uts.sipakjabat.service;
 
-import com.bps.uts.sipakjabat.dto.ChangePasswordRequest;
-import com.bps.uts.sipakjabat.dto.MessageResponse;
-import com.bps.uts.sipakjabat.dto.ProfileResponse;
-import com.bps.uts.sipakjabat.dto.UpdateProfileRequest;
+import com.bps.uts.sipakjabat.dto.*;
 import com.bps.uts.sipakjabat.model.User;
 import com.bps.uts.sipakjabat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,8 +24,6 @@ public class UserService {
     public ProfileResponse updateProfile(User currentUser, UpdateProfileRequest request) {
         currentUser.setNamaLengkap(request.getNamaLengkap());
         currentUser.setEmail(request.getEmail());
-        currentUser.setPangkatGolongan(request.getPangkatGolongan());
-        currentUser.setJabatan(request.getJabatan());
         User updatedUser = userRepository.save(currentUser);
         return mapToProfileResponse(updatedUser);
     }
@@ -42,7 +37,6 @@ public class UserService {
         }
         currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(currentUser);
-
         return new MessageResponse("Password berhasil diperbarui.");
     }
 
@@ -58,7 +52,42 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    // Method helper privat untuk mengubah User menjadi ProfileResponse
+    @Transactional
+    public User createUserByAdmin(AdminCreateUserRequest request) {
+        if (request.getRole() == null) {
+            throw new IllegalArgumentException("Role wajib diisi saat membuat user baru oleh admin.");
+        }
+        if (userRepository.findByNip(request.getNip()).isPresent()) {
+            throw new IllegalStateException("NIP sudah terdaftar.");
+        }
+
+        var user = User.builder()
+                .namaLengkap(request.getNamaLengkap())
+                .nip(request.getNip())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .pangkatGolongan(request.getPangkatGolongan())
+                .jabatan(request.getJabatan())
+                .tmtPangkatTerakhir(request.getTmtPangkatTerakhir())
+                .role(request.getRole())
+                .build();
+
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User ubahRole(Long userId, UbahRoleRequestDTO request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User dengan ID " + userId + " tidak ditemukan"));
+
+        if (request.getNewRole() == null) {
+            throw new IllegalArgumentException("Role baru wajib diisi.");
+        }
+
+        user.setRole(request.getNewRole());
+        return userRepository.save(user);
+    }
+
     private ProfileResponse mapToProfileResponse(User user) {
         return ProfileResponse.builder()
                 .id(user.getId())

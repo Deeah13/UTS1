@@ -1,15 +1,19 @@
 package com.bps.uts.sipakjabat.service;
 
-import com.bps.uts.sipakjabat.dto.VerifikasiRequest;
+import com.bps.uts.sipakjabat.dto.PengajuanVerifikasiResponseDTO;
+import com.bps.uts.sipakjabat.dto.RevisiRequestDTO;
+import com.bps.uts.sipakjabat.dto.VerifikasiRequestDTO;
 import com.bps.uts.sipakjabat.model.Pengajuan;
 import com.bps.uts.sipakjabat.model.StatusPengajuan;
-import com.bps.uts.sipakjabat.model.User; // <-- 1. Tambahkan import untuk User
+import com.bps.uts.sipakjabat.model.User;
 import com.bps.uts.sipakjabat.repository.PengajuanRepository;
-import com.bps.uts.sipakjabat.repository.UserRepository; // <-- 2. Tambahkan import untuk UserRepository
+import com.bps.uts.sipakjabat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,40 +21,90 @@ import java.util.List;
 public class VerifikasiService {
 
     private final PengajuanRepository pengajuanRepository;
-    private final UserRepository userRepository; // <-- 3. Inject UserRepository di sini
+    private final UserRepository userRepository;
 
     public List<Pengajuan> getAllPengajuanMasuk() {
-        // Ambil semua pengajuan yang sudah di-submit oleh pegawai
-        return pengajuanRepository.findAllByStatus(StatusPengajuan.DIAJUKAN);
+        return pengajuanRepository.findAllByStatus(StatusPengajuan.SUBMITTED);
     }
 
     @Transactional
-    public Pengajuan verifikasiPengajuan(Long pengajuanId, VerifikasiRequest request) {
+    public PengajuanVerifikasiResponseDTO approvePengajuan(Long pengajuanId, VerifikasiRequestDTO request, User verifikator) {
         Pengajuan pengajuan = pengajuanRepository.findById(pengajuanId)
-                .orElseThrow(() -> new RuntimeException("Pengajuan tidak ditemukan"));
+                .orElseThrow(() -> new RuntimeException("Pengajuan dengan ID " + pengajuanId + " tidak ditemukan"));
 
-        if (request.getStatus() != StatusPengajuan.DISETUJUI && request.getStatus() != StatusPengajuan.DITOLAK) {
-            throw new IllegalArgumentException("Status verifikasi hanya boleh DISETUJUI atau DITOLAK");
+        if (pengajuan.getStatus() != StatusPengajuan.SUBMITTED) {
+            throw new IllegalStateException("Hanya pengajuan dengan status SUBMITTED yang bisa disetujui.");
         }
 
-        // --- LOGIKA PERBAIKAN DIMULAI DI SINI ---
-
-        // 4. Jika pengajuan disetujui, update data master pegawai
-        if (request.getStatus() == StatusPengajuan.DISETUJUI) {
-            User userToUpdate = pengajuan.getUser(); // Ambil objek user dari pengajuan
-
-            // Update field pangkat dan jabatan user dengan data dari pengajuan
-            userToUpdate.setPangkatGolongan(pengajuan.getPangkatTujuan());
-            userToUpdate.setJabatan(pengajuan.getJabatanTujuan());
-
-            userRepository.save(userToUpdate); // 5. Simpan perubahan pada data user ke database
-        }
-
-        // --- LOGIKA PERBAIKAN SELESAI ---
-
-        // Lanjutkan proses untuk mengubah status pengajuan itu sendiri
-        pengajuan.setStatus(request.getStatus());
+        pengajuan.setStatus(StatusPengajuan.APPROVED);
         pengajuan.setCatatanVerifikator(request.getCatatan());
+        pengajuan.setVerifikator(verifikator);
+        pengajuan.setTanggalDiputuskan(LocalDateTime.now());
+
+        // Update data user yang mengajukan
+        User userToUpdate = pengajuan.getUser();
+        userToUpdate.setPangkatGolongan(pengajuan.getPangkatTujuan());
+        userToUpdate.setJabatan(pengajuan.getJabatanTujuan());
+        userToUpdate.setTmtPangkatTerakhir(LocalDate.now());
+        userRepository.save(userToUpdate);
+
+        pengajuanRepository.save(pengajuan);
+
+        return PengajuanVerifikasiResponseDTO.builder()
+                .id(pengajuan.getId())
+                .status(pengajuan.getStatus())
+                .verifikator(PengajuanVerifikasiResponseDTO.UserSimpleDTO.builder()
+                        .id(verifikator.getId())
+                        .namaLengkap(verifikator.getNamaLengkap())
+                        .build())
+                .catatanVerifikator(pengajuan.getCatatanVerifikator())
+                .tanggalDiputuskan(pengajuan.getTanggalDiputuskan())
+                .build();
+    }
+
+    @Transactional
+    public PengajuanVerifikasiResponseDTO rejectPengajuan(Long pengajuanId, VerifikasiRequestDTO request, User verifikator) {
+        Pengajuan pengajuan = pengajuanRepository.findById(pengajuanId)
+                .orElseThrow(() -> new RuntimeException("Pengajuan dengan ID " + pengajuanId + " tidak ditemukan"));
+
+        if (pengajuan.getStatus() != StatusPengajuan.SUBMITTED) {
+            throw new IllegalStateException("Hanya pengajuan dengan status SUBMITTED yang bisa ditolak.");
+        }
+
+        pengajuan.setStatus(StatusPengajuan.REJECTED);
+        pengajuan.setAlasanPenolakan(request.getAlasan());
+        pengajuan.setCatatanVerifikator(request.getCatatan());
+        pengajuan.setVerifikator(verifikator);
+        pengajuan.setTanggalDiputuskan(LocalDateTime.now());
+
+        pengajuanRepository.save(pengajuan);
+
+        return PengajuanVerifikasiResponseDTO.builder()
+                .id(pengajuan.getId())
+                .status(pengajuan.getStatus())
+                .verifikator(PengajuanVerifikasiResponseDTO.UserSimpleDTO.builder()
+                        .id(verifikator.getId())
+                        .namaLengkap(verifikator.getNamaLengkap())
+                        .build())
+                .alasanPenolakan(pengajuan.getAlasanPenolakan())
+                .catatanVerifikator(pengajuan.getCatatanVerifikator())
+                .tanggalDiputuskan(pengajuan.getTanggalDiputuskan())
+                .build();
+    }
+
+    @Transactional
+    public Pengajuan kembalikanUntukRevisi(Long pengajuanId, RevisiRequestDTO request, User verifikator) {
+        Pengajuan pengajuan = pengajuanRepository.findById(pengajuanId)
+                .orElseThrow(() -> new RuntimeException("Pengajuan dengan ID " + pengajuanId + " tidak ditemukan"));
+
+        if (pengajuan.getStatus() != StatusPengajuan.SUBMITTED) {
+            throw new IllegalStateException("Hanya pengajuan dengan status SUBMITTED yang bisa dikembalikan untuk revisi.");
+        }
+
+        pengajuan.setStatus(StatusPengajuan.PERLU_REVISI);
+        pengajuan.setCatatanVerifikator(request.getCatatan());
+        pengajuan.setVerifikator(verifikator);
+
         return pengajuanRepository.save(pengajuan);
     }
 }

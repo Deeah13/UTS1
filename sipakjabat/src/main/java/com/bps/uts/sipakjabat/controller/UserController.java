@@ -1,7 +1,7 @@
 package com.bps.uts.sipakjabat.controller;
 
 import com.bps.uts.sipakjabat.dto.ChangePasswordRequest;
-import com.bps.uts.sipakjabat.dto.MessageResponse;
+import com.bps.uts.sipakjabat.dto.MessageResponse; // <-- PASTIKAN BARIS INI ADA
 import com.bps.uts.sipakjabat.dto.ProfileResponse;
 import com.bps.uts.sipakjabat.dto.UpdateProfileRequest;
 import com.bps.uts.sipakjabat.model.User;
@@ -22,25 +22,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "2. Manajemen Profil Pengguna", description = "API untuk mengelola data profil milik pengguna yang sedang login.")
+@Tag(name = "Manajemen Profil Pengguna", description = "API untuk mengelola data profil milik pengguna yang sedang login.")
 public class UserController {
 
     private final UserService userService;
-
-    @Operation(summary = "Mendapatkan profil saya", description = "Mengambil data profil lengkap dari pengguna yang sedang login.")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "Data profil berhasil diambil"))
-    @GetMapping("/profile")
-    public ResponseEntity<ProfileResponse> getMyProfile(@AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(userService.getProfile(currentUser));
-    }
-
-    @Operation(summary = "Memperbarui profil saya", description = "Memperbarui data profil seperti nama, email, pangkat, dan jabatan. Akan mengembalikan data profil yang sudah terupdate.")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "Profil berhasil diperbarui"))
-    @PutMapping("/profile")
-    public ResponseEntity<ProfileResponse> updateMyProfile(@AuthenticationPrincipal User currentUser, @RequestBody UpdateProfileRequest request) {
-        ProfileResponse updatedProfile = userService.updateProfile(currentUser, request);
-        return ResponseEntity.ok(updatedProfile);
-    }
 
     @Operation(summary = "Mengganti password saya", description = "Mengganti password pengguna setelah memverifikasi password lama.")
     @ApiResponses(value = {
@@ -59,5 +44,20 @@ public class UserController {
     @DeleteMapping("/account")
     public ResponseEntity<MessageResponse> deleteMyAccount(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(userService.deleteAccount(currentUser));
+    }
+
+    @Operation(summary = "Mendapatkan profil saya", description = "Mengambil data profil lengkap dari pengguna yang sedang login.")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "Data profil berhasil diambil"))
+    @GetMapping("/profile")
+    public ResponseEntity<ProfileResponse> getMyProfile(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(userService.getProfile(currentUser));
+    }
+
+    @Operation(summary = "Memperbarui profil saya", description = "Memperbarui data profil seperti nama, email, pangkat, dan jabatan. Akan mengembalikan data profil yang sudah terupdate.")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "Profil berhasil diperbarui"))
+    @PutMapping("/profile")
+    public ResponseEntity<ProfileResponse> updateMyProfile(@AuthenticationPrincipal User currentUser, @RequestBody UpdateProfileRequest request) {
+        ProfileResponse updatedProfile = userService.updateProfile(currentUser, request);
+        return ResponseEntity.ok(updatedProfile);
     }
 }

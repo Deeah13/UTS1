@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class RegisterRequest {
+public class AdminCreateUserRequest {
     private String namaLengkap;
     private String nip;
     private String email;
@@ -13,5 +13,5 @@ public class RegisterRequest {
     private String pangkatGolongan;
     private String jabatan;
     private LocalDate tmtPangkatTerakhir;
-    private Role role; // Akan diabaikan oleh service
+    private Role role;
 }

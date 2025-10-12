@@ -20,29 +20,29 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
+    private static final String[] WHITE_LIST_URL = {
+            "/api/auth/**",
+            "/v2/api-docs",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/configuration/ui",
+            "/configuration/security",
+            "/swagger-ui/**",
+            "/webjars/**",
+            "/swagger-ui.html"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoint publik (tidak perlu login)
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-
-                        // Endpoint untuk ADMIN dan VERIFIKATOR (bisa tambah/edit dokumen)
-                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "VERIFIKATOR")
-
-                        // Endpoint untuk PEGAWAI (lihat data sendiri, ajukan pengajuan)
+                        .requestMatchers(WHITE_LIST_URL).permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("VERIFIKATOR")
                         .requestMatchers("/api/pegawai/**").hasRole("PEGAWAI")
-
-                        // Endpoint yang bisa diakses semua user yang login
-                        .requestMatchers("/api/profile/**", "/api/user/**").authenticated()
-
-                        // Sisanya harus login
+                        .requestMatchers("/api/user/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

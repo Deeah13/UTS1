@@ -12,6 +12,4 @@ import lombok.NoArgsConstructor;
 public class UpdateProfileRequest {
     private String namaLengkap;
     private String email;
-    private String pangkatGolongan;
-    private String jabatan;
 }

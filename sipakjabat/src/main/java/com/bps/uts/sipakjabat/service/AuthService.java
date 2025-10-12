@@ -22,6 +22,9 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
+        if (repository.findByNip(request.getNip()).isPresent()) {
+            throw new IllegalStateException("NIP sudah terdaftar.");
+        }
         var user = User.builder()
                 .namaLengkap(request.getNamaLengkap())
                 .nip(request.getNip())
@@ -29,7 +32,8 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .pangkatGolongan(request.getPangkatGolongan())
                 .jabatan(request.getJabatan())
-                .role(request.getRole() != null ? request.getRole() : Role.PEGAWAI)
+                .tmtPangkatTerakhir(request.getTmtPangkatTerakhir())
+                .role(Role.PEGAWAI)
                 .build();
         repository.save(user);
         var jwtToken = jwtService.generateToken(user);
@@ -38,13 +42,10 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getNip(),
-                        request.getPassword()
-                )
+                new UsernamePasswordAuthenticationToken(request.getNip(), request.getPassword())
         );
         var user = repository.findByNip(request.getNip())
-                .orElseThrow();
+                .orElseThrow(() -> new RuntimeException("NIP atau password salah."));
         var jwtToken = jwtService.generateToken(user);
         return AuthResponse.builder().token(jwtToken).build();
     }

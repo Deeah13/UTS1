@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -21,18 +20,32 @@ public class Pengajuan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "verifikator_id")
+    private User verifikator;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private JenisPengajuan jenisPengajuan;
+
+    private String pangkatSaatIni;
+    private String jabatanSaatIni;
     private String pangkatTujuan;
     private String jabatanTujuan;
 
     @Enumerated(EnumType.STRING)
     private StatusPengajuan status;
 
+    private String alasanPenolakan;
     private String catatanVerifikator;
-    private LocalDateTime tanggalPengajuan;
+
+    private LocalDateTime tanggalDibuat;
+    private LocalDateTime tanggalDiajukan;
+    private LocalDateTime tanggalDiputuskan;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
