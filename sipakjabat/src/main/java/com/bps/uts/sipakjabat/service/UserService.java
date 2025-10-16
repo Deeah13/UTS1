@@ -1,7 +1,11 @@
 package com.bps.uts.sipakjabat.service;
 
 import com.bps.uts.sipakjabat.dto.*;
+import com.bps.uts.sipakjabat.model.Pengajuan; // <-- Import tambahan
+import com.bps.uts.sipakjabat.model.StatusPengajuan; // <-- Import tambahan
 import com.bps.uts.sipakjabat.model.User;
+import com.bps.uts.sipakjabat.repository.MasterDokumenPegawaiRepository; // <-- Import tambahan
+import com.bps.uts.sipakjabat.repository.PengajuanRepository; // <-- Import tambahan
 import com.bps.uts.sipakjabat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +20,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PengajuanRepository pengajuanRepository; // <-- Injeksi Repository
+    private final MasterDokumenPegawaiRepository dokumenRepository; // <-- Injeksi Repository
 
     // ==================== OPERASI UNTUK USER SENDIRI ====================
 
@@ -25,7 +31,6 @@ public class UserService {
 
     @Transactional
     public ProfileResponse updateProfile(User currentUser, UpdateProfileRequest request) {
-        // User hanya bisa update nama dan email
         if (request.getNamaLengkap() != null) {
             currentUser.setNamaLengkap(request.getNamaLengkap());
         }
@@ -38,25 +43,17 @@ public class UserService {
 
     @Transactional
     public MessageResponse changePassword(User currentUser, ChangePasswordRequest request) {
-        // Validasi password lama
         if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPassword())) {
             throw new IllegalStateException("Password lama salah");
         }
-
-        // Validasi password baru tidak sama dengan password lama
         if (request.getNewPassword().equals(request.getCurrentPassword())) {
             throw new IllegalStateException("Password baru tidak boleh sama dengan password lama");
         }
-
-        // Validasi panjang password baru (minimal 6 karakter)
         if (request.getNewPassword().length() < 6) {
             throw new IllegalStateException("Password baru minimal 6 karakter");
         }
-
-        // Update password
         currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(currentUser);
-
         return new MessageResponse("Password berhasil diperbarui");
     }
 
@@ -76,29 +73,21 @@ public class UserService {
 
     @Transactional
     public User createUserByAdmin(AdminCreateUserRequest request) {
-        // Validasi input
         if (request.getRole() == null) {
             throw new IllegalArgumentException("Role wajib diisi saat membuat user baru");
         }
-
         if (request.getNip() == null || request.getNip().trim().isEmpty()) {
             throw new IllegalArgumentException("NIP wajib diisi");
         }
-
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
             throw new IllegalArgumentException("Email wajib diisi");
         }
-
         if (request.getPassword() == null || request.getPassword().length() < 6) {
             throw new IllegalArgumentException("Password minimal 6 karakter");
         }
-
-        // Cek duplikasi NIP
         if (userRepository.findByNip(request.getNip()).isPresent()) {
             throw new IllegalStateException("NIP sudah terdaftar");
         }
-
-        // Buat user baru
         var user = User.builder()
                 .namaLengkap(request.getNamaLengkap())
                 .nip(request.getNip())
@@ -109,7 +98,6 @@ public class UserService {
                 .tmtPangkatTerakhir(request.getTmtPangkatTerakhir())
                 .role(request.getRole())
                 .build();
-
         return userRepository.save(user);
     }
 
@@ -117,8 +105,6 @@ public class UserService {
     public User updateUserByAdmin(Long userId, UpdateUserByAdminRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User dengan ID " + userId + " tidak ditemukan"));
-
-        // Update field yang dikirim (jika tidak null)
         if (request.getNamaLengkap() != null && !request.getNamaLengkap().trim().isEmpty()) {
             user.setNamaLengkap(request.getNamaLengkap());
         }
@@ -134,31 +120,50 @@ public class UserService {
         if (request.getTmtPangkatTerakhir() != null) {
             user.setTmtPangkatTerakhir(request.getTmtPangkatTerakhir());
         }
-
         return userRepository.save(user);
     }
 
+    // --- METHOD INI YANG DIPERBAIKI ---
     @Transactional
     public MessageResponse deleteUserByAdmin(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User dengan ID " + userId + " tidak ditemukan"));
 
-        // Cek apakah user ini sedang memiliki pengajuan aktif
-        // (Optional: bisa ditambahkan validasi business logic di sini)
+        // 1. Dapatkan semua pengajuan milik user ini
+        List<Pengajuan> pengajuanList = pengajuanRepository.findByUserId(user.getId());
 
+        // 2. Cek apakah ada pengajuan yang statusnya masih aktif (menunggu proses)
+        boolean hasActivePengajuan = pengajuanList.stream()
+                .anyMatch(p -> p.getStatus() == StatusPengajuan.SUBMITTED || p.getStatus() == StatusPengajuan.PERLU_REVISI);
+
+        if (hasActivePengajuan) {
+            // 3. Jika ada, tolak penghapusan dan beri pesan error
+            throw new IllegalStateException(
+                    "Tidak dapat menghapus akun. Pengguna masih memiliki pengajuan yang sedang diproses (status SUBMITTED atau PERLU_REVISI)."
+            );
+        }
+
+        // 4. Jika tidak ada pengajuan aktif, hapus semua data terkait SEBELUM menghapus user
+        // Hapus semua pengajuan (yang statusnya DRAFT, APPROVED, atau REJECTED)
+        pengajuanRepository.deleteAll(pengajuanList);
+
+        // Hapus semua dokumen
+        dokumenRepository.deleteAll(dokumenRepository.findByUserId(user.getId()));
+
+        // 5. Setelah semua data anak dihapus, baru hapus data induk (user)
         userRepository.delete(user);
-        return new MessageResponse("Akun pengguna dengan NIP " + user.getNip() + " berhasil dihapus");
+
+        return new MessageResponse("Akun pengguna dengan NIP " + user.getNip() + " beserta seluruh data terkait berhasil dihapus.");
     }
+    // --- AKHIR DARI PERBAIKAN ---
 
     @Transactional
     public User ubahRole(Long userId, UbahRoleRequestDTO request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User dengan ID " + userId + " tidak ditemukan"));
-
         if (request.getNewRole() == null) {
             throw new IllegalArgumentException("Role baru wajib diisi");
         }
-
         user.setRole(request.getNewRole());
         return userRepository.save(user);
     }

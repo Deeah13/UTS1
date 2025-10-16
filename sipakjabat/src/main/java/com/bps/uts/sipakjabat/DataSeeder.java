@@ -68,7 +68,7 @@ public class DataSeeder implements CommandLineRunner {
                     .nip("199005102015032001")
                     .email("rina.wulandari@bps.go.id")
                     .password(passwordEncoder.encode("verifikator123"))
-                    .pangkatGolongan("Penata (III/c)")
+                    .pangkatGolongan("Eselon II (IV/d)")
                     .jabatan("Analis Kepegawaian")
                     .tmtPangkatTerakhir(LocalDate.of(2020, 1, 1))
                     .role(Role.VERIFIKATOR)
