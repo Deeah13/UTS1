@@ -1,5 +1,6 @@
 package com.bps.uts.sipakjabat.repository;
 
+import com.bps.uts.sipakjabat.model.MasterDokumenPegawai; // <-- Import tambahan
 import com.bps.uts.sipakjabat.model.StatusPengajuan;
 import com.bps.uts.sipakjabat.model.Pengajuan;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,4 +10,7 @@ public interface PengajuanRepository extends JpaRepository<Pengajuan, Long> {
     List<Pengajuan> findByUserId(Long userId);
     List<Pengajuan> findAllByStatus(StatusPengajuan status);
     long countByStatus(StatusPengajuan status);
+
+    // --- METHOD BARU DITAMBAHKAN DI SINI ---
+    long countByLampiranContains(MasterDokumenPegawai dokumen);
 }
