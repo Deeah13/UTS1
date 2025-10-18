@@ -1,11 +1,11 @@
 package com.bps.uts.sipakjabat.service;
 
 import com.bps.uts.sipakjabat.dto.*;
-import com.bps.uts.sipakjabat.model.Pengajuan; // <-- Import tambahan
-import com.bps.uts.sipakjabat.model.StatusPengajuan; // <-- Import tambahan
+import com.bps.uts.sipakjabat.model.Pengajuan;
+import com.bps.uts.sipakjabat.model.StatusPengajuan;
 import com.bps.uts.sipakjabat.model.User;
-import com.bps.uts.sipakjabat.repository.MasterDokumenPegawaiRepository; // <-- Import tambahan
-import com.bps.uts.sipakjabat.repository.PengajuanRepository; // <-- Import tambahan
+import com.bps.uts.sipakjabat.repository.MasterDokumenPegawaiRepository;
+import com.bps.uts.sipakjabat.repository.PengajuanRepository;
 import com.bps.uts.sipakjabat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,8 +20,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final PengajuanRepository pengajuanRepository; // <-- Injeksi Repository
-    private final MasterDokumenPegawaiRepository dokumenRepository; // <-- Injeksi Repository
+    private final PengajuanRepository pengajuanRepository;
+    private final MasterDokumenPegawaiRepository dokumenRepository;
 
     // ==================== OPERASI UNTUK USER SENDIRI ====================
 
@@ -123,7 +123,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // --- METHOD INI YANG DIPERBAIKI ---
     @Transactional
     public MessageResponse deleteUserByAdmin(Long userId) {
         User user = userRepository.findById(userId)
@@ -155,7 +154,6 @@ public class UserService {
 
         return new MessageResponse("Akun pengguna dengan NIP " + user.getNip() + " beserta seluruh data terkait berhasil dihapus.");
     }
-    // --- AKHIR DARI PERBAIKAN ---
 
     @Transactional
     public User ubahRole(Long userId, UbahRoleRequestDTO request) {

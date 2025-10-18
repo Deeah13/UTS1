@@ -77,11 +77,14 @@ public class UserController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Password berhasil diganti",
-                    content = @Content(schema = @Schema(implementation = MessageResponse.class))
+                    // Skema diubah agar konsisten menggunakan GlobalResponseDTO
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Bad Request - Password lama salah atau password baru sama dengan yang lama"
+                    // Deskripsi diperjelas
+                    description = "Bad Request - Password lama salah, password baru sama, atau password baru < 6 karakter",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
             )
     })
     @PutMapping("/change-password")
@@ -113,6 +116,24 @@ public class UserController {
             summary = "Melihat detail pengajuan saya",
             description = "Mendapatkan detail lengkap dari satu pengajuan milik pengguna yang sedang login"
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Data detail pengajuan berhasil diambil"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Akses ditolak (mencoba melihat pengajuan milik orang lain)",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Pengajuan tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @GetMapping("/pengajuan/{id}")
     public ResponseEntity<GlobalResponseDTO<Pengajuan>> getMyPengajuanDetail(
             @PathVariable Long id,

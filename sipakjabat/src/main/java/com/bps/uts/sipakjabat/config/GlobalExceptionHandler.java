@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException; // <-- Import tambahan
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -14,7 +14,6 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // --- HANDLER BARU DITAMBAHKAN DI SINI ---
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<GlobalResponseDTO<String>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
         return ResponseEntity
@@ -24,7 +23,6 @@ public class GlobalExceptionHandler {
                         .message("Akun tidak ditemukan, tidak aktif, atau telah diblokir.")
                         .build());
     }
-    // -----------------------------------------
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<GlobalResponseDTO<String>> handleBadCredentialsException(BadCredentialsException ex) {
@@ -36,7 +34,6 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
-    // ... (handler lainnya tetap sama)
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<GlobalResponseDTO<String>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity
@@ -96,7 +93,6 @@ public class GlobalExceptionHandler {
                         .message("Autentikasi gagal. Silakan periksa kredensial Anda.")
                         .build());
     }
-
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<GlobalResponseDTO<String>> handleNotFoundException(NoHandlerFoundException ex) {

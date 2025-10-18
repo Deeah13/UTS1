@@ -9,6 +9,10 @@ import com.bps.uts.sipakjabat.service.PengajuanService;
 import com.bps.uts.sipakjabat.service.UserService;
 import com.bps.uts.sipakjabat.service.VerifikasiService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +42,19 @@ public class AdminController {
             description = "Ini adalah satu-satunya cara untuk membuat akun baru di sistem. " +
                     "Self-registration tidak diperbolehkan untuk menjaga keamanan dan integritas data."
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Pengguna baru berhasil dibuat"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Input tidak valid (misal: NIP/Email/Role wajib diisi, NIP sudah terdaftar)",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @PostMapping("/users")
     public ResponseEntity<GlobalResponseDTO<User>> createUser(@RequestBody AdminCreateUserRequest request) {
         User newUser = userService.createUserByAdmin(request);
@@ -59,6 +76,19 @@ public class AdminController {
     }
 
     @Operation(summary = "Melihat detail pengguna tertentu")
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Data pengguna berhasil diambil"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @GetMapping("/users/{id}")
     public ResponseEntity<GlobalResponseDTO<User>> getUserDetail(@PathVariable Long id) {
         User user = userService.getUserById(id);
@@ -72,6 +102,19 @@ public class AdminController {
             summary = "Memperbarui data kepegawaian pengguna",
             description = "Mengubah data kepegawaian seperti pangkat, golongan, jabatan, dan TMT pangkat terakhir"
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Data pengguna berhasil diperbarui"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @PutMapping("/users/{id}")
     public ResponseEntity<GlobalResponseDTO<User>> updateUser(
             @PathVariable Long id,
@@ -88,6 +131,24 @@ public class AdminController {
             summary = "Mengubah role seorang pengguna",
             description = "Mengubah role pengguna antara PEGAWAI dan VERIFIKATOR"
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Role pengguna berhasil diubah"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Role baru wajib diisi",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @PutMapping("/users/{id}/role")
     public ResponseEntity<GlobalResponseDTO<User>> ubahRole(
             @PathVariable Long id,
@@ -105,6 +166,24 @@ public class AdminController {
             description = "Menghapus akun pengguna secara permanen. " +
                     "Pengguna tidak dapat menghapus akunnya sendiri untuk menjaga integritas data."
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Akun pengguna berhasil dihapus"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Gagal menghapus (pengguna masih memiliki pengajuan aktif)",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @DeleteMapping("/users/{id}")
     public ResponseEntity<GlobalResponseDTO<String>> deleteUser(@PathVariable Long id) {
         MessageResponse message = userService.deleteUserByAdmin(id);
@@ -120,6 +199,19 @@ public class AdminController {
             summary = "Menambahkan dokumen untuk pengguna tertentu",
             description = "Menambahkan dokumen kepegawaian seperti SK Pangkat, SKP, dll untuk pengguna tertentu"
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Dokumen berhasil ditambahkan"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @PostMapping("/users/{userId}/dokumen")
     public ResponseEntity<GlobalResponseDTO<MasterDokumenPegawai>> createDokumenForUser(
             @PathVariable Long userId,
@@ -166,6 +258,19 @@ public class AdminController {
     }
 
     @Operation(summary = "Melihat detail satu pengajuan spesifik")
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Data pengajuan berhasil diambil"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Pengajuan tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @GetMapping("/pengajuan/{id}")
     public ResponseEntity<GlobalResponseDTO<Pengajuan>> getDetailPengajuan(@PathVariable Long id) {
         Pengajuan pengajuan = pengajuanService.getDetailPengajuan(id);
@@ -180,6 +285,24 @@ public class AdminController {
             description = "Menyetujui pengajuan kenaikan pangkat/jabatan. " +
                     "Data kepegawaian pegawai akan otomatis diupdate sesuai dengan pangkat/jabatan tujuan."
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Pengajuan berhasil disetujui"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Hanya pengajuan dengan status SUBMITTED yang bisa disetujui",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Pengajuan tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @PostMapping("/pengajuan/{id}/approve")
     public ResponseEntity<GlobalResponseDTO<PengajuanVerifikasiResponseDTO>> approve(
             @PathVariable Long id,
@@ -197,6 +320,24 @@ public class AdminController {
             summary = "Menolak sebuah pengajuan",
             description = "Menolak pengajuan dengan memberikan alasan penolakan"
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Pengajuan berhasil ditolak"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Hanya pengajuan dengan status SUBMITTED yang bisa ditolak",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Pengajuan tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @PostMapping("/pengajuan/{id}/reject")
     public ResponseEntity<GlobalResponseDTO<PengajuanVerifikasiResponseDTO>> reject(
             @PathVariable Long id,
@@ -214,6 +355,24 @@ public class AdminController {
             summary = "Mengembalikan pengajuan untuk direvisi",
             description = "Mengembalikan pengajuan ke pegawai untuk diperbaiki dengan memberikan catatan revisi"
     )
+    // Anotasi Ditambahkan
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Pengajuan telah dikembalikan untuk revisi"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Hanya pengajuan dengan status SUBMITTED yang bisa dikembalikan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Pengajuan tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = GlobalResponseDTO.class))
+            )
+    })
+    // Akhir Anotasi
     @PostMapping("/pengajuan/{id}/revisi")
     public ResponseEntity<GlobalResponseDTO<Pengajuan>> kembalikanUntukRevisi(
             @PathVariable Long id,

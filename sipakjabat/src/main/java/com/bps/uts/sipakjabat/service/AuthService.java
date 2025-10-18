@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException; // <-- Import tambahan
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +19,6 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse login(LoginRequest request) {
-        // --- PERBAIKAN DIMULAI DI SINI ---
 
         // 1. Cek dulu apakah user dengan NIP tersebut ada di database.
         var userOptional = repository.findByNip(request.getNip());
@@ -40,8 +39,6 @@ public class AuthService {
             // Kita tangkap dan lemparkan lagi agar ditangani sebagai 401 Unauthorized.
             throw new BadCredentialsException("NIP atau password salah.");
         }
-
-        // --- AKHIR DARI PERBAIKAN ---
 
         // Jika semua berhasil, generate token
         var user = userOptional.get();
